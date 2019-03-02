@@ -1,7 +1,7 @@
 // @TODO: YOUR CODE HERE!
 // x = poverty and y = obesity
 
-var svgWidth = 960;
+var svgWidth = 900;
 var svgHeight = 500;
 
 var margin = {
@@ -24,9 +24,9 @@ var chartGroup = svg.append("g")
   .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
 // Import Data
-var url = "https://raw.githubusercontent.com/Kerrykova/Data-Journalism-and-D3/master/assets/data/data.csv"
-//d3.csv("data.csv").then(function(data) {
-d3.csv(url).then(function(data) {
+// var url = "https://raw.githubusercontent.com/Kerrykova/Data-Journalism-and-D3/master/assets/data/data.csv"
+d3.csv("data.csv").then(function(data) {
+// d3.csv(url).then(function(data) {
     console.log(data);
 
     // Step 1: Parse Data/Cast as numbers
@@ -39,29 +39,27 @@ d3.csv(url).then(function(data) {
 
     // Step 2: Create scale functions
     // ==============================
-    var xscale = d3.scaleTime()
-        .domain([20, d3.max(data, d => d.poverty)])
-        .range([0, width]);
+    var xLinearScale = d3.scaleLinear()
+      .domain([d3.min(data, d => d.poverty)-1, d3.max(data, d => d.poverty)])
+      .range([0, width]);
 
-    var yscale = d3.scaleLinear()
-        .domain([0, d3.max(data, d => d.obesity)])
-        .range([height, 0]);
+    var yLinearScale = d3.scaleLinear()
+      .domain([d3.min(data, d => d.obesity)-1, d3.max(data, d => d.obesity)])
+      .range([height, 0]);
 
     // Step 3: Create axis functions
     // ==============================
-    var xAxis = d3.axisBottom(xscale).tickFormat();
-    var yAxis = d3.axisLeft(yscale).ticks();
-
+    var bottomAxis = d3.axisBottom(xLinearScale);
+    var leftAxis = d3.axisLeft(yLinearScale);
 
     // Step 4: Append Axes to the chart
     // ==============================
     chartGroup.append("g")
-        .attr("transform", `translate(0, ${height})`)
-        .call(xAxis);
+      .attr("transform", `translate(0, ${height})`)
+      .call(bottomAxis);
 
     chartGroup.append("g")
-        .call(yAxis);
-
+      .call(leftAxis);
 
     // Step 5: Create Circles
     // ==============================
@@ -69,29 +67,27 @@ d3.csv(url).then(function(data) {
     .data(data)
     .enter()
     .append("circle")
-    .attr("cx", (d, i) => xscale(i))
-    .attr("cy", d => yscale(d))
-    .attr("r", "5")
-    .attr("fill", "blue");
+    .text(d => d.abbr)
+    .attr("cx", d => xLinearScale(d.poverty))
+    .attr("cy", d => yLinearScale(d.obesity))
+    .attr("r", "15")
+    .attr("fill", "blue")
+    .attr("opacity", ".33");
 
-    // Step 6: Initialize tool tip
-    // ==============================
-    var toolTip = d3.tip()
-    .attr("class", "tooltip")
-    .offset([80, -60])
-    .html(function(d) {
-      return (`<strong>${d.state}<strong>`);
-    });
-
-    // Step 7: Create tooltip in the chart
-    // ==============================
-    chartGroup.call(toolTip);
-
-    // Step 8: Create event listeners to display and hide the tooltip
-    // ==============================
-    circlesGroup.on("click", function(d) {
-      toolTip.show(d, this);
-    })
+    // starting with MS? why?
+    var textGroup = chartGroup.selectAll(".abbr")
+       .data(data)
+       .enter()
+       .append("text")
+       .classed("abbr", true)
+       .text((d,i) => {
+         console.log(i)
+         return d.abbr
+       })
+       .attr("x", d => xLinearScale(d.poverty)-8)
+       .attr("y", d => yLinearScale(d.obesity)+5)
+      .attr("font-size", "10px")
+      .attr("color", "black");
 
     // Create axes labels
     chartGroup.append("text")
@@ -100,10 +96,10 @@ d3.csv(url).then(function(data) {
       .attr("x", 0 - (height / 2))
       .attr("dy", "1em")
       .attr("class", "axisText")
-      .text("Poverty and Obesity % by State");
+      .text("Obesity %");
 
     chartGroup.append("text")
       .attr("transform", `translate(${width / 2}, ${height + margin.top + 30})`)
       .attr("class", "axisText")
-      .text("Is this x or y axis?");
+      .text("Poverty %");
   });
